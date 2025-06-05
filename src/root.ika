@@ -19,6 +19,9 @@ fn hooked_plugin_load_fn(args: *CCommand) void {
     }
 }
 
+var is_loaded: bool = false;
+var skip_unload: bool = false;
+
 var plugin_load: *ConCommand;
 var orig_plugin_load_fn: *void = null;
 
@@ -27,6 +30,12 @@ fn "thiscall" Load(
     interfaceFactory: fn(name: []u8, ret: *i32) *void,
     gameServerFactory: fn(name: []u8, ret: *i32) *void
 ) bool {
+    if (is_loaded) {
+        Warning("Plugin already loaded\n");
+        skip_unload = true;
+        return false;
+    }
+
     g_pCVar = interfaceFactory("VEngineCvar004", null);
     if (g_pCVar == null) {
         Warning("Failed to get ICvar interface\n");
@@ -70,12 +79,19 @@ fn "thiscall" Load(
     orig_plugin_load_fn = plugin_load.m_fnCompletionCallback;
     plugin_load.m_fnCompletionCallback = hooked_plugin_load_fn;
 
+    is_loaded = true;
     return true;
 }
 
 fn "thiscall" Unload(thisptr: *void) void {
+    if (skip_unload) {
+        skip_unload = false;
+        return;
+    }
+
     if (orig_plugin_load_fn != null) {
         plugin_load.m_fnCompletionCallback = orig_plugin_load_fn;
+        orig_plugin_load_fn = null;
     }
 }
 
