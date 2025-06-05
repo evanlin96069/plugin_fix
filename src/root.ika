@@ -163,10 +163,16 @@ fn "thiscall" OnQueryCvarValueFinished(
     pCvarValue: []u8
 ) void {}
 
-var _vt_plugin: [18]*void;
+fn "thiscall" OnEdictAllocated(thisptr: *void, edict: *void) void {}
+
+fn "thiscall" OnEdictFreed(thisptr: *void, edict: *void) void {}
+
+const VT_PLUGIN_COUNT = 20;
+
+var _vt_plugin: [VT_PLUGIN_COUNT]*void;
 
 struct IServerPluginCallbacks {
-    _vt: *[18]*void
+    _vt: *[VT_PLUGIN_COUNT]*void
 };
 
 var plugin: IServerPluginCallbacks;
@@ -190,12 +196,14 @@ fn InitPluginVT() void {
     _vt_plugin[15] = ClientCommand;
     _vt_plugin[16] = NetworkIDValidated;
     _vt_plugin[17] = OnQueryCvarValueFinished;
+    _vt_plugin[18] = OnEdictAllocated;
+    _vt_plugin[19] = OnEdictFreed;
 
     plugin._vt = &_vt_plugin;
 }
 
 fn CreateInterface(pName: []u8, pReturncode: *i32) *IServerPluginCallbacks {
-    if (strcmp(pName, "ISERVERPLUGINCALLBACKS002") == 0) {
+    if (strcmp(pName, "ISERVERPLUGINCALLBACKS003") == 0) {
         InitPluginVT();
         if (pReturncode != null) {
             *pReturncode = 0;
