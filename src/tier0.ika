@@ -1,0 +1,3 @@
+fn Msg(format: []u8, ...) void;
+fn Warning(format: []u8, ...) void;
+fn DevMsg(format: []u8, ...) void;

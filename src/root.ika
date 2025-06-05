@@ -1,0 +1,127 @@
+#include "libc.ika"
+#include "tier0.ika"
+
+fn "thiscall" Load(thisptr: *void, interfaceFactory: *void, gameServerFactory: *void) bool {
+    Msg("Hello from ika\n");
+    return true;
+}
+
+fn "thiscall" Unload(thisptr: *void) void {}
+
+fn "thiscall" Pause(thisptr: *void) void {}
+
+fn "thiscall" UnPause(thisptr: *void) void {}
+
+fn "thiscall" GetPluginDescription(thisptr: *void) []u8 {
+    return "ika plugin";
+}
+
+fn "thiscall" LevelInit(thisptr: *void, pMapName: []u8) void {}
+
+fn "thiscall" ServerActivate(
+    thisptr: *void,
+    pEdictList: *void,
+    edictCount: i32,
+    clientMax: i32
+) void {}
+
+fn "thiscall" GameFrame(thisptr: *void, simulating: bool) void {}
+
+fn "thiscall" LevelShutdown(thisptr: *void) void {}
+
+fn "thiscall" ClientActive(thisptr: *void, pEntity: *void) void {}
+
+fn "thiscall" ClientDisconnect(thisptr: *void, pEntity: *void) void {}
+
+fn "thiscall" ClientPutInServer(thisptr: *void, pEntity: *void, playername: []u8) void {}
+
+fn "thiscall" SetCommandClient(thisptr: *void, index: i32) void {}
+
+fn "thiscall" ClientSettingsChanged(thisptr: *void, pEdict: *void) void {}
+
+fn "thiscall" ClientConnect(
+    thisptr: *void,
+    bAllowConnect: *bool,
+    pEntity: *void,
+    pszName: []u8,
+    pszAddress: []u8,
+    reject: []u8,
+    maxrejectlen: i32
+) i32 {
+    return 0;
+}
+
+fn "thiscall" ClientCommand(
+    thisptr: *void,
+    pEntity: *void,
+    args: *void
+) i32 {
+    return 0;
+}
+
+fn "thiscall" NetworkIDValidated(
+    thisptr: *void,
+    pszUserName: []u8,
+    pszNetworkID: []u8
+) i32 {
+    return 0;
+}
+
+fn "thiscall" OnQueryCvarValueFinished(
+    thisptr: *void,
+    iCookie: i32,
+    pPlayerEntity: *void,
+    eStatus: i32,
+    pCvarName: []u8,
+    pCvarValue: []u8
+) void {}
+
+var _vt_plugin: [18]*void;
+
+struct IServerPluginCallbacks {
+    _vt: *[18]*void
+};
+
+var plugin: IServerPluginCallbacks;
+
+fn InitPluginVT() void {
+    _vt_plugin[0] = Load;
+    _vt_plugin[1] = Unload;
+    _vt_plugin[2] = Pause;
+    _vt_plugin[3] = UnPause;
+    _vt_plugin[4] = GetPluginDescription;
+    _vt_plugin[5] = LevelInit;
+    _vt_plugin[6] = ServerActivate;
+    _vt_plugin[7] = GameFrame;
+    _vt_plugin[8] = LevelShutdown;
+    _vt_plugin[9] = ClientActive;
+    _vt_plugin[10] = ClientDisconnect;
+    _vt_plugin[11] = ClientPutInServer;
+    _vt_plugin[12] = SetCommandClient;
+    _vt_plugin[13] = ClientSettingsChanged;
+    _vt_plugin[14] = ClientConnect;
+    _vt_plugin[15] = ClientCommand;
+    _vt_plugin[16] = NetworkIDValidated;
+    _vt_plugin[17] = OnQueryCvarValueFinished;
+
+    plugin._vt = &_vt_plugin;
+}
+
+fn CreateInterface(name: []u8, ret: *i32) *IServerPluginCallbacks {
+    if (strcmp(name, "ISERVERPLUGINCALLBACKS002") == 0) {
+        InitPluginVT();
+        if (ret != null) {
+            *ret = 0;
+        }
+        return &plugin;
+    }
+
+    if (ret != null) {
+        *ret = 1;
+    }
+    return null;
+}
+
+fn "stdcall" DllMain(hinstDLL: *void, fdwReason: u32, lpReserved: *void) bool {
+    return true;
+}

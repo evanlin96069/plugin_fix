@@ -1,0 +1,5 @@
+LIBRARY "tier0.dll"
+EXPORTS
+    Msg
+    Warning
+    DevMsg
