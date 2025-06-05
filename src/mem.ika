@@ -1,0 +1,78 @@
+#include "windows.ika"
+
+fn ScanFirst(
+    mem: []u8,
+    mem_len: u32,
+    pattern: []u8,
+    pattern_len: u32,
+    offset: *u32
+) bool {
+    if (mem_len < pattern_len) {
+        return false;
+    }
+
+    *offset = 0;
+    while (*offset < mem_len - pattern_len + 1) : (*offset += 1) {
+        var not_matched: bool = false;
+        var i: u32 = 0;
+        while (i < pattern_len) : (i += 1) {
+            if (pattern[i] != mem[*offset + i]) {
+                not_matched = true;
+                break;
+            }
+        }
+
+        if (not_matched) {
+            continue;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+fn ScanUnique(
+    mem: []u8,
+    mem_len: u32,
+    pattern: []u8,
+    pattern_len: u32,
+    offset: *u32
+) bool {
+    if (ScanFirst(mem, mem_len, pattern, pattern_len, offset)) {
+        var dummy: u32;
+        if (ScanFirst(
+            mem + *offset + pattern_len,
+            mem_len - *offset - pattern_len,
+            pattern,
+            pattern_len,
+            &dummy
+        )) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+fn GetModule(module_name: []u8, mem: *[]u8, len: *u32) bool {
+    var module: *void = GetModuleHandleA(module_name);
+    if (module == null) {
+        DevMsg("GetModuleHandle error: %d\n", GetLastError());
+        return false;
+    }
+
+    var info: MODULEINFO;
+    if (!GetModuleInformation(
+            GetCurrentProcess(),
+            module, &info,
+            sizeof(MODULEINFO)
+    )) {
+        DevMsg("GetModuleInformation error: %d\n", GetLastError());
+        return false;
+    }
+
+    *mem = as([]u8, module);
+    *len = info.SizeOfImage;
+    return true;
+}

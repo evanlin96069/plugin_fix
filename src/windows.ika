@@ -1,0 +1,18 @@
+extern fn "stdcall" GetModuleHandleA(lpModuleName: []u8) *void;
+
+struct MODULEINFO {
+    lpBaseOfDll: *void,
+    SizeOfImage: u32,
+    EntryPoint: *void,
+};
+
+extern fn "stdcall" GetModuleInformation(
+    hProcess: *void,
+    hModule: *void,
+    lpmodinfo: *MODULEINFO,
+    cb: u32
+) bool;
+
+extern fn "stdcall" GetCurrentProcess() *void;
+
+extern fn "stdcall" GetLastError() u32;

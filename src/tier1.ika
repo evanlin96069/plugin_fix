@@ -1,0 +1,40 @@
+struct ConCommandBase;
+struct ConCommand;
+struct _vt_ICvar;
+
+struct ICvar {
+    _vt: *_vt_ICvar,
+};
+
+struct _vt_ICvar {
+    _vt_skip: [14]*void,
+    FindCommand: fn "thiscall" (thisptr: *void, name: []u8) *ConCommand,
+};
+
+const COMMAND_MAX_ARGC = 64;
+const COMMAND_MAX_LENGTH = 512;
+
+struct CCommand {
+    m_nArgc: i32,
+    m_nArgv0Size: i32,
+    m_pArgSBuffer: [COMMAND_MAX_LENGTH]u8,
+    m_pArgvBuffer: [COMMAND_MAX_LENGTH]u8,
+    m_ppArgv: [COMMAND_MAX_ARGC][]u8,
+};
+
+struct ConCommandBase {
+    m_pNext: *ConCommandBase,
+    m_bRegistered: bool,
+    m_pszName: []u8,
+    m_pszHelpString: []u8,
+    m_nFlags: i32,
+};
+
+struct ConCommand {
+    base: ConCommandBase,
+    m_fnCommandCallback: fn(command: *CCommand) void,
+    m_fnCompletionCallback: *void,
+    flags: u8,
+};
+
+var g_pCVar: *ICvar = null;

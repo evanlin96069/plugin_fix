@@ -9,8 +9,8 @@ BUILD_DIR = build
 DEF_FILE = $(DEF_DIR)/tier0.def
 LIB_FILE = $(BUILD_DIR)/libtier0.a
 SRC_FILE = $(SRC_DIR)/root.ika
-ASM_FILE = $(BUILD_DIR)/ika_plugin.s
-OUT_DLL  = $(BUILD_DIR)/ika_plugin.dll
+ASM_FILE = $(BUILD_DIR)/plugin_fix.s
+OUT_DLL  = $(BUILD_DIR)/plugin_fix.dll
 
 IKA_SOURCES := $(wildcard $(SRC_DIR)/*.ika)
 

@@ -1,19 +1,90 @@
 #include "libc.ika"
 #include "tier0.ika"
+#include "tier1.ika"
+#include "mem.ika"
 
-fn "thiscall" Load(thisptr: *void, interfaceFactory: *void, gameServerFactory: *void) bool {
-    Msg("Hello from ika\n");
+var g_pServerPluginHandler: *void = null;
+
+var CServerPlugin__LoadPlugin: fn "thiscall" (thisptr: *void, fileName: []u8) bool;
+
+fn hooked_plugin_load_fn(args: *CCommand) void {
+    if (args.m_nArgc < 2) {
+        Warning("plugin_load <filename>\n");
+    } else {
+        if (!CServerPlugin__LoadPlugin(g_pServerPluginHandler, args.m_ppArgv[1])) {
+            Warning("Unable to load plugin \"%s\"\n", args.m_ppArgv[1]);
+            return;
+        }
+        Msg("Loaded plugin \"%s\"\n", args.m_ppArgv[1]);
+    }
+}
+
+var plugin_load: *ConCommand;
+var orig_plugin_load_fn: *void = null;
+
+fn "thiscall" Load(
+    thisptr: *void,
+    interfaceFactory: fn(name: []u8, ret: *i32) *void,
+    gameServerFactory: fn(name: []u8, ret: *i32) *void
+) bool {
+    g_pCVar = interfaceFactory("VEngineCvar004", null);
+    if (g_pCVar == null) {
+        Warning("Failed to get ICvar interface\n");
+        return false;
+    }
+
+    g_pServerPluginHandler = interfaceFactory("ISERVERPLUGINHELPERS001", null);
+    if (g_pServerPluginHandler == null) {
+        Warning("Failed to get IServerPluginHelpers interface\n");
+        return false;
+    }
+
+    plugin_load = g_pCVar._vt.FindCommand(g_pCVar, "plugin_load");
+    if (plugin_load == null) {
+        Warning("Failed to find plugin_load\n");
+        return false;
+    }
+
+    var plugin_load_fn: []u8 = as([]u8, plugin_load.m_fnCompletionCallback);
+    if (plugin_load_fn[0] != 0xc3) {
+        Msg("No need to fix! plugin_load callback is not no-op\n");
+        return false;
+    }
+
+    var mem: []u8;
+    var len: u32;
+    if (!GetModule("engine.dll", &mem, &len)) {
+        Warning("Failed to open engine.dll\n");
+        return false;
+    }
+
+    const pattern = "\x55\x8B\xEC\x51\x56\x57\x68\x90\x00\x00\x00";
+    const pattern_len = 11;
+    var offset: u32;
+    if (!ScanUnique(mem, len, pattern, pattern_len, &offset)) {
+        Warning("Failed to find CServerPlugin::LoadPlugin\n");
+        return false;
+    }
+
+    CServerPlugin__LoadPlugin = as(*void, mem + offset);
+    orig_plugin_load_fn = plugin_load.m_fnCompletionCallback;
+    plugin_load.m_fnCompletionCallback = hooked_plugin_load_fn;
+
     return true;
 }
 
-fn "thiscall" Unload(thisptr: *void) void {}
+fn "thiscall" Unload(thisptr: *void) void {
+    if (orig_plugin_load_fn != null) {
+        plugin_load.m_fnCompletionCallback = orig_plugin_load_fn;
+    }
+}
 
 fn "thiscall" Pause(thisptr: *void) void {}
 
 fn "thiscall" UnPause(thisptr: *void) void {}
 
 fn "thiscall" GetPluginDescription(thisptr: *void) []u8 {
-    return "ika plugin";
+    return "plugin_load fix";
 }
 
 fn "thiscall" LevelInit(thisptr: *void, pMapName: []u8) void {}
@@ -107,17 +178,17 @@ fn InitPluginVT() void {
     plugin._vt = &_vt_plugin;
 }
 
-fn CreateInterface(name: []u8, ret: *i32) *IServerPluginCallbacks {
-    if (strcmp(name, "ISERVERPLUGINCALLBACKS002") == 0) {
+fn CreateInterface(pName: []u8, pReturncode: *i32) *IServerPluginCallbacks {
+    if (strcmp(pName, "ISERVERPLUGINCALLBACKS002") == 0) {
         InitPluginVT();
-        if (ret != null) {
-            *ret = 0;
+        if (pReturncode != null) {
+            *pReturncode = 0;
         }
         return &plugin;
     }
 
-    if (ret != null) {
-        *ret = 1;
+    if (pReturncode != null) {
+        *pReturncode = 1;
     }
     return null;
 }
