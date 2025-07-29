@@ -202,7 +202,7 @@ fn InitPluginVT() void {
     plugin._vt = &_vt_plugin;
 }
 
-fn CreateInterface(pName: []u8, pReturncode: *i32) *IServerPluginCallbacks {
+pub fn CreateInterface(pName: []u8, pReturncode: *i32) *IServerPluginCallbacks {
     if (strcmp(pName, "ISERVERPLUGINCALLBACKS003") == 0) {
         InitPluginVT();
         if (pReturncode != null) {
@@ -217,6 +217,6 @@ fn CreateInterface(pName: []u8, pReturncode: *i32) *IServerPluginCallbacks {
     return null;
 }
 
-fn "stdcall" DllMain(hinstDLL: *void, fdwReason: u32, lpReserved: *void) bool {
+pub fn "stdcall" DllMain(hinstDLL: *void, fdwReason: u32, lpReserved: *void) bool {
     return true;
 }
